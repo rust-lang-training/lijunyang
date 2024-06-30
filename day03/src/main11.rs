@@ -1,6 +1,10 @@
 fn main() {
     test1();
     test2();
+    let s = "hello world";
+    let s1 = &s[0..5];
+    let s2 = &s[6..s.len()];
+    println!("{} {}", s1, s2);
 }
 
 fn test1() {
@@ -10,7 +14,7 @@ fn test1() {
     println!("{}", describe_point(-1, 1));
     println!("{}", describe_point(-1, -1));
     fn describe_point(x: i32, y: i32) -> &'static str {
-        use ::std::cmp::Ordering::*;
+        use std::cmp::Ordering::*;
 
         match (x.cmp(&0), y.cmp(&0)) {
             (Equal, Equal) => "at the origin",
