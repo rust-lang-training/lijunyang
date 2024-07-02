@@ -3,6 +3,7 @@ fn main() {
     test2();
 }
 
+
 fn test2() {
     #[derive(Debug)]
     struct Point3d {
