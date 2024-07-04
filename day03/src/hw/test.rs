@@ -29,16 +29,16 @@ fn main() {
     assert_eq!(1, *min_val_ref(&arr4).unwrap());
 
     // 测试 avg
-    assert_eq!(27.0, avg(&arr1).unwrap());
-    assert_eq!(8.0, avg(&arr2).unwrap());
-    assert_eq!(None, avg(&arr3));
-    assert_eq!(1.0, avg(&arr4).unwrap());
+    assert_eq!(27.0, avg(&arr1));
+    assert_eq!(8.0, avg(&arr2));
+    assert_eq!(0.0, avg(&arr3));
+    assert_eq!(1.0, avg(&arr4));
 
     // 测试 map_double
-    assert_eq!([2, 198, -6, 20, 56], map_double(&mut arr1).unwrap());
-    assert_eq!([16; 5], map_double(&mut arr2).unwrap());
-    assert_eq!(None, map_double(&mut arr3));
-    assert_eq!([2], map_double(&mut arr4).unwrap());
+    assert_eq!([2, 198, -6, 20, 56], map_double(&mut arr1));
+    assert_eq!([16; 5], map_double(&mut arr2));
+    assert_eq!([] as [i32; 0], map_double(&mut arr3));
+    assert_eq!([2], map_double(&mut arr4));
 }
 
 fn max_val(arr: &[i32]) -> Option<i32> {
@@ -94,26 +94,26 @@ fn min_val_ref(arr: &[i32]) -> Option<&i32> {
     Some(&(arr[min_index]))
 }
 
-fn avg(arr: &[i32]) -> Option<f64> {
+fn avg(arr: &[i32]) -> f64 {
     if arr.is_empty() {
-        return None;
+        return 0.0;
     }
     // let sum: i32 = arr.iter().sum();
     let mut sum = 0;
     for i in 0..arr.len() {
         sum += arr[i];
     }
-    Some(sum as f64 / arr.len() as f64)
+    sum as f64 / arr.len() as f64
 }
 
-fn map_double(arr: &mut [i32]) -> Option<&[i32]> {
+fn map_double(arr: &mut [i32]) -> &[i32] {
     if arr.is_empty() {
-        return None;
+        return arr;
     }
     for i in 0..arr.len() {
         arr[i] *= 2;
     }
-    Some(arr)
+    arr
     // arr.iter_mut().for_each(|x| *x *= 2);
     // Some(arr)
 }
