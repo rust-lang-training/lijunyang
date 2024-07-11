@@ -163,8 +163,8 @@ fn pay(
     orders: Vec<Order>,
     mut update_balance: impl FnMut(f32) -> f32,
     mut update_step: impl FnMut(i32),
+    products: &Vec<Product>,
 ) {
-    // TODO: 待添加校验 库存是否充足逻辑
     if orders.is_empty() {
         println!(
             "{}",
@@ -176,7 +176,15 @@ fn pay(
         update_step(7);
         return;
     }
-
+    let stack = products.iter().fold(HashMap::new(), |mut acc, product| {
+        acc.insert(product.id, product.stock);
+        acc
+    });
+    orders.iter().for_each(|item| {
+        if stack.get(&item.product.id).unwrap() < &item.quantity {
+            panic!("{}", console::style("商品库存不足，无法下单").red().bold());
+        }
+    });
     let total: f32 = orders
         .iter()
         .map(|item| item.product.price * item.quantity as f32)
@@ -198,7 +206,63 @@ fn pay(
         update_step(4);
     }
 }
-
+fn add_cart<'a>(
+    products: &'a Vec<Product>,
+    mut update_step: impl FnMut(i32),
+    mut update_orders: impl FnMut(i32, (&'a Product, u32)),
+) {
+    let (map, names) = render_all_products(products);
+    println!(
+        "{}",
+        console::style("请输入商品编号和购买数量，每次只能输入一组正整数")
+            .green()
+            .bold()
+    );
+    println!(
+        "{}",
+        console::style("输入格式：商品编号 购买数量， 例如26 10")
+            .green()
+            .bold()
+    );
+    let input = handle_input();
+    let item: Vec<_> = input
+        .trim()
+        .split(' ')
+        .filter(|s| !s.is_empty())
+        .map(|s| s.parse::<i32>().expect("输入格式错误"))
+        .collect();
+    println!("{:?}", item);
+    if item.len() == 2 {
+        if item[0] >= (names.len() + 1) as i32 {
+            println!(
+                "{}",
+                console::style("商品编号不存在, 请重新输入").red().bold()
+            );
+        } else {
+            if let Some(product) = products.iter().find(|p: &&Product| p.id as i32 == item[0]) {
+                update_orders(item[0] as i32, (&product, item[1] as u32))
+            } else {
+                println!(
+                    "{}",
+                    console::style("商品编号不存在, 请重新输入").red().bold()
+                );
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_millis(800));
+        update_step(7);
+    } else {
+        if item[0] == (names.len() + 1) as i32 {
+            update_step(100);
+            return;
+        }
+        println!(
+            "{}",
+            console::style("输入格式错误, 请重新输入").red().bold()
+        );
+        std::thread::sleep(std::time::Duration::from_millis(800));
+        update_step(7);
+    }
+}
 fn start() {
     let products: Vec<Product> = gen_products();
     let categories = get_categories(&products);
@@ -214,12 +278,11 @@ fn start() {
             match step {
                 0 => render_home(),
                 1 => {
-                    println!("step: {}", step);
                     render_categories(&products, &categories, |val| step = val);
                 }
                 2 => render_product_by_name(&products, |val| step = val),
                 3 => {
-                    let a = orders
+                    let orders_vec = orders
                         .iter()
                         .map(|s| Order {
                             product: s.1 .0,
@@ -227,12 +290,13 @@ fn start() {
                         })
                         .collect();
                     pay(
-                        a,
+                        orders_vec,
                         |val| {
                             balance += val;
                             balance
                         },
                         |val| step = val,
+                        &products,
                     );
                 }
                 4 => {
@@ -262,65 +326,6 @@ fn start() {
                             println!("{:?}", orders);
                         },
                     );
-                    fn add_cart<'a>(
-                        products: &'a Vec<Product>,
-                        mut update_step: impl FnMut(i32),
-                        mut update_orders: impl FnMut(i32, (&'a Product, u32)),
-                    ) {
-                        let (map, names) = render_all_products(products);
-                        println!(
-                            "{}",
-                            console::style("请输入商品编号和购买数量，每次只能输入一组正整数")
-                                .green()
-                                .bold()
-                        );
-                        println!(
-                            "{}",
-                            console::style("输入格式：商品编号 购买数量， 例如26 10")
-                                .green()
-                                .bold()
-                        );
-                        let input = handle_input();
-                        let item: Vec<_> = input
-                            .trim()
-                            .split(' ')
-                            .filter(|s| !s.is_empty())
-                            .map(|s| s.parse::<i32>().expect("输入格式错误"))
-                            .collect();
-                        println!("{:?}", item);
-                        if item.len() == 2 {
-                            if item[0] >= (names.len() + 1) as i32 {
-                                println!(
-                                    "{}",
-                                    console::style("商品编号不存在, 请重新输入").red().bold()
-                                );
-                            } else {
-                                if let Some(product) =
-                                    products.iter().find(|p: &&Product| p.id as i32 == item[0])
-                                {
-                                    update_orders(item[0] as i32, (&product, item[1] as u32))
-                                } else {
-                                    println!(
-                                        "{}",
-                                        console::style("商品编号不存在, 请重新输入").red().bold()
-                                    );
-                                }
-                            }
-                            std::thread::sleep(std::time::Duration::from_millis(800));
-                            update_step(7);
-                        } else {
-                            if item[0] == (names.len() + 1) as i32 {
-                                update_step(100);
-                                return;
-                            }
-                            println!(
-                                "{}",
-                                console::style("输入格式错误, 请重新输入").red().bold()
-                            );
-                            std::thread::sleep(std::time::Duration::from_millis(800));
-                            update_step(7);
-                        }
-                    }
                 }
                 100 => break,
                 _ => {
