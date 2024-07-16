@@ -3,12 +3,17 @@ mod util;
 mod util1;
 use util1::{hello2, Point, TestEnum};
 mod async1;
+mod hw;
 mod log;
 mod mutex;
 mod pi;
 mod test;
+mod test02;
+mod test03;
+mod test04;
 // use async1::test;
-
+use futures::future::join_all;
+use std::time;
 #[async_std::main]
 async fn main() {
     println!("Hello, world!");
@@ -38,5 +43,14 @@ async fn main() {
     // pi::test();
     // async1::test();
     // async1::test()
-    async1::test().await;
+    // async1::test().await;
+    // test02::test02_main().await;
+    // test03::test03_main().await;
+
+    // test04::test_main();
+
+    hw::test();
 }
+// std::future::Future
+// futures::future::Future
+// Streams Read Write Seek BufRead traits

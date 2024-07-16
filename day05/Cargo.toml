@@ -5,5 +5,7 @@ edition = "2021"
 
 [dependencies]
 async-std = {version = "1.12.0", features = ["attributes"]}
+futures = "0.3.30"
+num_cpus = "1.16.0"
 rand = "0.8.5"
 
