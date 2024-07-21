@@ -11,6 +11,11 @@ mod test;
 mod test02;
 mod test03;
 mod test04;
+mod test05;
+mod test06;
+mod test07;
+mod test08;
+mod test09;
 // use async1::test;
 use futures::future::join_all;
 use std::time;
@@ -49,6 +54,13 @@ async fn main() {
 
     // test04::test_main();
 
+    // test05::test();
+
+    // test06::test();
+    // test07::test();
+    // test08::test();
+
+    test09::test();
     hw::test();
 }
 // std::future::Future

@@ -1,0 +1,15 @@
+{
+    "name": "day05_5",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "dependencies": {
+        "day05_4": "/Users/liyaya/study/rust_study/test01/day05_4/index.node"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}
