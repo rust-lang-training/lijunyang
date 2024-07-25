@@ -1,0 +1,15 @@
+{
+  "name": "hw2",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "hw2_bg.wasm",
+    "hw2.js",
+    "hw2.d.ts"
+  ],
+  "main": "hw2.js",
+  "types": "hw2.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
