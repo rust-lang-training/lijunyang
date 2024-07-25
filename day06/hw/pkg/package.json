@@ -1,0 +1,15 @@
+{
+  "name": "hw",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "hw_bg.wasm",
+    "hw.js",
+    "hw.d.ts"
+  ],
+  "main": "hw.js",
+  "types": "hw.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
