@@ -1,3 +1,4 @@
+use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use rocket::{fairing::AdHoc, routes, FromForm};
 use serde::{Deserialize, Serialize};
@@ -89,8 +90,11 @@ impl TryFrom<PetCreateForm> for PetDocument {
 }
 
 mod dao {
-    use super::{PetDocument, PetQueryForm, Status};
-    use crate::common::{AppResult, DbClient};
+    use super::{
+        service::get_by_id, Category, PetCreateForm, PetDocument, PetQueryForm, PetUpdateForm,
+        Status,
+    };
+    use crate::common::{AppError, AppResult, DbClient};
     use mongodb::{
         bson::{doc, oid::ObjectId, Document},
         options::FindOptions,
@@ -137,7 +141,53 @@ mod dao {
         }
         Some(doc)
     }
+    fn build_update(form: &PetUpdateForm) -> Option<Document> {
+        let status = match &form.status {
+            Some(s) => match Status::try_from(s.as_str()) {
+                Ok(_st) => Some(s.clone()),
+                Err(_) => None,
+            },
+            None => None,
+        };
+        let category = match &form.category {
+            Some(c) => match Category::try_from(c.as_str()) {
+                Ok(cat) => Some(c),
+                Err(_) => None,
+            },
+            None => None,
+        };
+        let name = form.name.clone();
+        let age = match form.age {
+            Some(a) => Some(a),
+            None => None,
+        };
+        let mut doc = doc! {
+            "$set": {}
+        };
 
+        if category.is_some() {
+            doc.get_document_mut("$set")
+                .unwrap()
+                .insert("category", category.unwrap());
+        }
+        if status.is_some() {
+            doc.get_document_mut("$set")
+                .unwrap()
+                .insert("status", status.unwrap());
+        }
+        if name.is_some() {
+            doc.get_document_mut("$set")
+                .unwrap()
+                .insert("name", name.unwrap());
+        }
+        if form.age.is_some() {
+            doc.get_document_mut("$set")
+                .unwrap()
+                .insert("age", age.unwrap());
+        }
+
+        Some(doc)
+    }
     pub async fn count(client: &Connection<DbClient>, form: &PetQueryForm) -> AppResult<u64> {
         let col = client
             .default_database()
@@ -166,11 +216,49 @@ mod dao {
             .try_collect::<Vec<_>>()
             .await?)
     }
+    pub async fn find_by_id(
+        client: &Connection<DbClient>,
+        id: ObjectId,
+    ) -> AppResult<Option<PetDocument>> {
+        let collection = client
+            .default_database()
+            .unwrap()
+            .collection::<PetDocument>("pets");
+        let res = collection.find_one(doc! {"_id":id}, None).await?;
+        Ok(res)
+    }
+    pub async fn update_by_id(
+        client: &Connection<DbClient>,
+        id: &str,
+        data: PetUpdateForm,
+    ) -> AppResult<bool> {
+        let id = match ObjectId::parse_str(id) {
+            Ok(id) => id,
+            Err(_) => return Err(AppError::bad_request("id is not valid")),
+        };
+        let cur = find_by_id(client, id).await?;
+        if cur.is_none() {
+            return Err(AppError::not_found("pet not found"));
+        }
+        let col = client
+            .default_database()
+            .unwrap()
+            .collection::<PetDocument>("pets");
+        let update_data = build_update(&data);
+        if update_data.is_none() {
+            return Ok(false);
+        }
+        let res = col
+            .update_one(doc! {"_id": id}, update_data.unwrap(), None)
+            .await?;
+        Ok(res.modified_count > 0)
+    }
 }
 mod service {
-    use super::{dao, PetCreateForm, PetDocument, PetQueryForm};
+    use super::{dao, PetCreateForm, PetDocument, PetQueryForm, PetUpdateForm};
     use crate::common::{AppError, AppResult, DbClient, PagedResponse};
     use mongodb::bson::oid::ObjectId;
+    use rocket::serde::json::Json;
     use rocket_db_pools::Connection;
     pub async fn create(client: &Connection<DbClient>, form: PetCreateForm) -> AppResult<ObjectId> {
         // let doc: PetDocument = form.into();
@@ -189,11 +277,30 @@ mod service {
         let items = dao::find(client, &form).await?;
         Ok(PagedResponse { total, items })
     }
+    pub async fn get_by_id(
+        client: &Connection<DbClient>,
+        id: &str,
+    ) -> AppResult<Option<PetDocument>> {
+        let id = ObjectId::parse_str(id);
+        match id {
+            Ok(_id) => {}
+            Err(_) => return Err(AppError::bad_request("id is not valid")),
+        }
+        let res = dao::find_by_id(client, id.unwrap()).await?;
+        Ok(res)
+    }
+    pub async fn update(
+        client: &Connection<DbClient>,
+        id: &str,
+        data: Json<PetUpdateForm>,
+    ) -> AppResult<bool> {
+        dao::update_by_id(client, id, data.into_inner()).await
+    }
 }
 mod controller {
-    use super::{service, PetCreateForm, PetDocument, PetQueryForm};
+    use super::{service, PetCreateForm, PetDocument, PetQueryForm, PetUpdateForm};
     use crate::common::{AppResult, DbClient, IdResponse, PagedResponse};
-    use rocket::{form::Form, get, post, serde::json::Json};
+    use rocket::{form::Form, get, post, put, serde::json::Json};
     use rocket_db_pools::Connection;
     #[post("/", data = "<data>")]
     pub async fn create(
@@ -213,6 +320,23 @@ mod controller {
     ) -> Json<AppResult<PagedResponse<PetDocument>>> {
         Json(service::query(&client, form).await)
     }
+
+    #[get("/<id>")]
+    pub async fn detail(
+        id: String,
+        client: Connection<DbClient>,
+    ) -> Json<AppResult<Option<PetDocument>>> {
+        let res = service::get_by_id(&client, &id).await;
+        Json(res)
+    }
+    #[put("/<id>", data = "<data>")]
+    pub async fn update(
+        id: String,
+        client: Connection<DbClient>,
+        data: Json<PetUpdateForm>,
+    ) -> Json<AppResult<bool>> {
+        Json(service::update(&client, &id, data).await)
+    }
 }
 
 #[derive(FromForm)]
@@ -226,8 +350,23 @@ pub struct PetQueryForm {
     pub name: Option<String>,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct PetUpdateForm {
+    pub name: Option<String>,
+    pub age: Option<u32>,
+    pub status: Option<String>,
+    pub category: Option<String>,
+}
 pub fn stage() -> AdHoc {
     AdHoc::on_ignite("pets", |rocket| async {
-        rocket.mount("/pets", routes![controller::create, controller::query])
+        rocket.mount(
+            "/pets",
+            routes![
+                controller::create,
+                controller::query,
+                controller::detail,
+                controller::update
+            ],
+        )
     })
 }
