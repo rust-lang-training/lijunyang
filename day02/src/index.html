@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Layout</title>
+  <style>
+    /* 设置全局样式 */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* PC 端横屏样式 */
+    @media only screen and (min-width: 768px) {
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f1f1f1;
+      }
+
+      .content {
+        width: 80%;
+        max-width: 800px;
+        padding: 40px;
+        background-color: #fff;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    /* 移动端竖屏样式 */
+    @media only screen and (max-width: 767px) {
+      .container {
+        padding: 20px;
+        background-color: #f1f1f1;
+      }
+
+      .content {
+        background-color: #fff;
+        padding: 20px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="content">
+      <h1>Welcome to our website!</h1>
+      <p>This is a responsive layout that adjusts based on the device's screen size.</p>
+    </div>
+  </div>
+</body>
+</html>

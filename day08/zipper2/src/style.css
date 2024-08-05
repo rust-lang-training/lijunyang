@@ -1,0 +1,42 @@
+* {
+    margin: 0;
+    padding: 0;
+    margin-bottom: 20px;
+}
+.p-10 {
+    padding: 20 10px;
+}
+
+.btn {
+    padding: 10px 20px;
+    background-color: #f90;
+    border: navajowhite;
+    outline: none;
+    border-radius: 5px;
+    color: #fff;
+    cursor: pointer;
+}
+.btn:hover {
+    background-color: #ff6600;
+}
+.btn:active {
+    background-color: #ff3300;
+}
+.btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+.btn-primary {
+    background-color: #007bff;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.bg-gray-200 {
+    background-color: #e5e7eb;
+}
+
+.w-300 {
+    width: 300px;
+}
